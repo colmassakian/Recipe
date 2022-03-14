@@ -1,0 +1,206 @@
+extends _layout
+block content 
+    // TODO: Autocomplete title, fill in info
+    // TODO: Make this not ugly, put shadows on everything, cards, search bar, add button
+    // TODO: Upload image to local or s3
+    .container
+        form.row.g-3.p-4.shadow
+            .col-md-6.mb-4
+                input#title.form-group.wide.left(type='text', name='title', placeholder='Name', list='results')
+                datalist#results
+            .col-md-6.mb-4
+                input#upload.form-group.left(type='file', name='image')
+            .col-md-12.mb-5
+                input#description.wide.left(type='text', name='description', placeholder='Description')
+            hr
+            .col-md-4.my-5
+                input#date.form-group.left(type='date', name='date')
+            .col-md-4.my-5
+                input#time.form-group.left(type='number', name='time', placeholder='Time to Cook (min)')
+            .col-md-4.my-5
+                input#rating.form-group.left(type='number', name='rating', placeholder='Rating')
+            .col-md-12.mb-5
+                input#tags.wide.left(type='text', name='tags', placeholder='Tags')
+            hr
+            .col-md-4.pb-2.g-3.border.my-5
+                .mt-3 Ingredients
+                #ingredients
+                    div
+                        input.input_border(type='text', name='ingredients', value='')
+                        a.remove_button(style="color:black")
+                            i.fa.fa-times(aria-hidden='true')
+            .col-md-8.pb-2.border.my-5
+                .mt-3 Steps
+                #steps
+                    div
+                        input.input_border.wide(type='text', name='steps', value='')
+                        a.remove_button(style="color:black")
+                            i.fa.fa-times(aria-hidden='true')
+            hr
+            .col-md-12.my-5
+                textarea#notes.form-group.md-textarea.wide(type='text', name='notes', rows='2', placeholder='Notes')
+            .col-md-4.offset-4.mb-5
+                button.mdc-button.mdc-button--raised(onclick='submit_form()')
+                    i.material-icons.mdc-button__icon(aria-hidden='true') add
+                    |   Add
+
+    script(type='text/javascript').
+        $(document).ready(function(){
+            var data = !{JSON.stringify(data)};
+            var tags = !{JSON.stringify(tags)};
+            if(data)
+                fill_form(data, tags);
+            var ingredients = $('#ingredients');
+            var steps = $('#steps');
+            var title = $('#title');
+
+            $('#title').keyup(function(){
+                var val = $('#title').val();
+                $.ajax({
+                    url: '/dishSearch',
+                    data: {name: val},
+                    method: 'POST'
+                }).then(function (response) {
+                    var list = document.getElementById('results');
+                    $(list).empty();
+                    response.forEach(function(item) {
+                        var option = document.createElement('option');
+                        // TODO: Switch item.id to item.position, will ruin search result clicks
+                        option.value = item.id + ": " + item.name;
+                        list.appendChild(option);
+                    });
+                }).catch(function (err) {
+                    console.error(err);
+                });
+            });
+
+            // Go to template page when search result is clicked
+            var textbox = document.getElementById("title");
+            textbox.addEventListener("input", function(e){
+                var isInputEvent = (Object.prototype.toString.call(e).indexOf("InputEvent") > -1);
+                
+                if(!isInputEvent) {
+                    let id = (e.target.value).split(':')[0];
+                    window.location = '/addPage/true/' + id;
+                }
+            }, false);
+            // TODO: Add style to make grayed out
+            var ingredientsInput = '<div><input class="input_border" type="text" name="ingredients" value=""/><a class="remove_button" style="color:black"><i class="fa fa-times" aria-hidden="true"></i></a></div>'; //New input field html
+            var stepsInput = '<div><input class="input_border" type="text" name="steps" value=""/><a class="remove_button" style="color:black"><i class="fa fa-times" aria-hidden="true"></i></a></div>'; //New input field html
+            
+            // TODO: Change style to normal, remove grayed out
+            $(ingredients).on('keyup', 'input[type="text"]:last', function() {
+                $(ingredients).append(ingredientsInput);
+            });
+            //Once remove button is clicked
+            $(ingredients).on('click', '.remove_button', function(e){
+                e.preventDefault();
+                $(this).parent('div').remove(); //Remove field html
+            });
+
+            $(steps).on('keyup', 'input[type="text"]:last', function() {
+                $(steps).append(stepsInput);
+            });
+            //Once remove button is clicked
+            $(steps).on('click', '.remove_button', function(e){
+                e.preventDefault();
+                $(this).parent('div').remove(); //Remove field html
+            });
+
+            // TODO: Add link for image and upload to images folder for now?
+        });
+
+        // If data was sent from the server (edit or template), populate the fields with the appropriate values
+        function fill_form(data, tags) {
+            $('#title').val(data.name);
+            $('#description').val(data.description);
+            //- $('#upload')[0].files[0];
+            $('#date').val(data.date);
+            $('#time').val(data.ttc);
+            $('#rating').val(data.rating);
+            $('#notes').val(data.notes);
+
+            let data_tags = tags.map(tag => tag.name).join(",");
+            $('#tags').val(data_tags);
+
+            var ingredientsInput = '<div><input class="input_border" type="text" name="ingredients" value=""/><a class="remove_button" style="color:black"><i class="fa fa-times" aria-hidden="true"></i></a></div>'; //New input field html
+            var stepsInput = '<div><input class="input_border" type="text" name="steps" value=""/><a class="remove_button" style="color:black"><i class="fa fa-times" aria-hidden="true"></i></a></div>'; //New input field html
+
+            if(data.ingredients) {
+                let data_ingredients = data.ingredients.split('+');
+                $('#ingredients input').val(data_ingredients[0]);
+                // TODO: Generate string with function getInput(name, value)
+                for(var i = 1; i < data_ingredients.length; i ++)
+                    $('#ingredients').append("<div><input class='input_border' type='text' name='ingredients' value='" + data_ingredients[i] + "'/><a class='remove_button' style='color:black'><i class='fa fa-times' aria-hidden='true'></i></a></div>");
+            }
+            if(data.steps) {
+                let data_steps = data.steps.split('+');
+                $('#steps input').val(data_steps[0]);
+                for(var i = 1; i < data_steps.length; i ++) 
+                    $('#steps').append("<div><input class='input_border' type='text' name='steps' value='" + data_steps[i] + "'/><a class='remove_button' style='color:black'><i class='fa fa-times' aria-hidden='true'></i></a></div>");
+            }
+
+            $('#submit').html('Update');
+        }
+
+        function submit_form() {
+            var ingredients = '';
+            var steps = '';
+            var title = $('#title').val();
+            var description = $('#description').val();
+            var image = $('#upload')[0].files[0];
+            var date = $('#date').val();
+            var ttc = $('#time').val();
+            var rating = $('#rating').val();
+            var notes = $('#notes').val();
+            var tags = $('#tags').val();
+            var data = !{JSON.stringify(data)};
+            var copy = !{JSON.stringify(copy)};
+            var url = '/add';
+
+            if(data && !copy) {
+                url = '/add/' + data.id;
+            }
+
+            $("#ingredients input[type=text]").each(function() {
+                var input = $(this).val();
+                if(input != '')
+                    ingredients += '+' + input;
+            });
+
+            $("#steps input[type=text]").each(function() {
+                var input = $(this).val();
+                if(input != '')
+                    steps += '+' + input;
+            });
+
+            // Remove leading '+'
+            ingredients = ingredients.substring(1);
+            steps = steps.substring(1);
+
+            // TODO: Loop through all input?
+            var data = new FormData();
+            data.append('title', title);
+            data.append('description', description);
+            data.append('image', image);
+            data.append('ingredients', ingredients);
+            data.append('steps', steps);
+            data.append('notes', notes);
+            data.append('rating', rating);
+            data.append('ttc', ttc);
+            data.append('date', date);
+            data.append('tags', tags);
+
+            $.ajax({
+                url: url,
+                data: data,
+                method: 'POST',
+                cache: false,
+                contentType: false,
+                processData: false,
+            }).then(function (response) {
+                return window.location = '/';
+            }).catch(function (err) {
+                console.error(err);
+            }); 
+        }

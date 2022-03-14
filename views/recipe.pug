@@ -1,0 +1,32 @@
+extends _layout
+block content
+    // TODO: Design recipe viewer page
+    - ingredients = data.ingredients.split('+');
+    - steps = data.steps.split('+');
+    - tagstring = '';
+    .row
+        .col-md-12
+            //- Limit img size, use same css as card image
+            img(src=data.image)
+            h1= data.name
+            h3= data.description
+        .col-md-6
+            ul 
+                for ingredient in ingredients 
+                    li.list-group-item= ingredient
+        .col-md-6
+            ul
+                for step in steps 
+                    li.list-group-item= step
+        .col-md-12 
+            p Time to Cook: #{data.ttc} minutes
+            p Rating: #{data.rating} 
+            p Date: #{data.date}
+            p= data.notes 
+        .col-md-12 
+            for tag in tags 
+                -tagstring = tagstring + tag.name + ', '
+                p= tag.name     
+
+            p=tagstring
+        p= data.position

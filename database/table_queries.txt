@@ -1,0 +1,27 @@
+CREATE TABLE recipes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT
+                        NOT NULL,
+    position    INTEGER UNIQUE,
+    name        VARCHAR NOT NULL,
+    description VARCHAR,
+    image       VARCHAR,
+    ingredients VARCHAR NOT NULL,
+    steps       VARCHAR,
+    notes       VARCHAR,
+    rating      REAL,
+    ttc         INTEGER,
+    date        VARCHAR
+);
+
+CREATE TABLE TagMap (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipeid INTEGER NOT NULL,
+    tagid    INTEGER NOT NULL
+);
+
+CREATE TABLE tags (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT
+                 NOT NULL,
+    name VARCHAR NOT NULL
+                 UNIQUE ON CONFLICT IGNORE
+);

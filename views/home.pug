@@ -1,0 +1,77 @@
+extends _layout
+block content
+    // TODO: Password before add
+    // TODO: Implement search
+    .row
+        .col-md-4.offset-md-4.my-5
+            .input-group
+                input#search-input.form-control.form-control-lg.border.rounded-pill.shadow-none(type='text', placeholder='Search')
+            .list-wrapper
+                ul#results(style='padding:0!important;')
+
+    #grid.row.col-md-10.offset-md-1.row-cols-1.row-cols-md-4.g-4
+        each recipe in data
+            .col
+                .card.h-100
+                    img.card-img-top(src=recipe.image)
+                    //- img.card-img-top(src='...', alt=recipe.title)
+                    .card-body
+                        //- a.nav-link(href='/add/' + recipe.id)
+                        //-     i.fas.fa-edit
+                        form(action='/addPage/false/' + recipe.id, method='get')
+                            button.btn.nav-link
+                                i.fas.fa-edit
+
+                        a.stretched-link(href='/recipe/' + recipe.id)
+                        h5.card-title= recipe.name
+                        p.card-text= recipe.description
+
+    // Add Button
+    button.mdc-button.mdc-button--raised(onclick="location.href = '/addPage';" type='button')
+        i.material-icons.mdc-button__icon(aria-hidden='true') add
+        |   Add
+
+    script(type='text/javascript').
+        $(document).ready(function(){
+            $('#search-input').keyup(function(){
+                var val = $('#search-input').val();
+                $.ajax({
+                    url: '/dishSearch',
+                    data: {name: val},
+                    method: 'POST'
+                }).then(function (response) {
+                    // TODO: Remove list when input not in focus
+                    // TODO: Make list appear above cards, don't push them down, z-index?, border radius 50rem
+                    var list = document.getElementById('results');
+                    $(list).empty();
+                    response.slice(0, 5).forEach(function(item) {
+                        var listViewItem=document.createElement('li');
+                        listViewItem.className = 'list-group-item list-group-item-action';
+                        var a = document.createElement('a');
+                        a.className = 'stretched-link text-decoration-none text-reset';
+                        var linkText = document.createTextNode(item.id + ": " + item.name);
+                        a.appendChild(linkText);
+                        a.href = '/addPage/true/' + item.id;
+                        listViewItem.appendChild(a);
+                        list.appendChild(listViewItem);
+                        
+                    });
+                    //- document.getElementById("search-input").appendChild(list);
+                }).catch(function (err) {
+                    console.error(err);
+                });
+            });
+
+            $('#search-input').focusout(function() {
+                $('.list-group-item').hide();
+                $(this).addClass('rounded-pill');
+                $(this).addClass('border');
+                
+            });
+            $('#search-input').focusin(function() {
+                $('.list-group-item').show();
+                $(this).removeClass('rounded-pill');
+                $(this).removeClass('border');
+                $(this).css({"border-top-right-radius": "24px", "border-top-left-radius": "24px", "border-bottom": "0"});
+            });
+        });
